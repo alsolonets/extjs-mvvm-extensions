@@ -1,5 +1,5 @@
 ﻿/**
-An override to be able split ViewModel data by ViewModel instances
+An override to separate ViewModel data by ViewModel instances
 */
 Ext.define('Ext.ux.app.SplitViewModel', {
     override: 'Ext.app.ViewModel',
@@ -21,7 +21,7 @@ Ext.define('Ext.ux.app.SplitViewModel', {
         /**
         @cfg {String}
         @private
-        id + nameDelimiter
+        uniqueName + nameDelimiter
         */
         prefix: undefined
     },
@@ -183,8 +183,7 @@ Ext.define('Ext.ux.app.SplitViewModel', {
     @param {Boolean} skipThis Pass true to ignore this instance
     */
     findViewModelByName: function (name, skipThis) {
-        var result,
-            vm = skipThis ? this.getParent() : this;
+        var vm = skipThis ? this.getParent() : this;
 
         while (vm) {
             if (vm.getName() == name) {

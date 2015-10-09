@@ -1,6 +1,9 @@
-﻿/**
-https://www.sencha.com/forum/showthread.php?297559-How-to-use-nested-ViewModel
-*/
+﻿/* global Ext */
+
+/**
+ * An override to notify parent ViewModel about current component's published properties changes
+ * and to make own ViewModel contain current component's published properties values.
+ */
 Ext.define('Ext.ux.mixin.Bindable', {
     initBindable: function () {
         var me = this;
@@ -15,8 +18,7 @@ Ext.define('Ext.ux.mixin.Bindable', {
         var me = this,
             vm = me.lookupViewModel(),
             parentVm = me.lookupViewModel(true),
-            path = me.viewModelKey,
-            state;
+            path = me.viewModelKey;
 
         if (path && property && parentVm) {
             path += '.' + property;
