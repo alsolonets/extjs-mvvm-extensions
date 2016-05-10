@@ -8,11 +8,11 @@ Ext.define('Ext.ux.mixin.Bindable', {
     initBindable: function () {
         var me = this;
         Ext.mixin.Bindable.prototype.initBindable.apply(me, arguments);
-        me.applyInitialPublishedState();
+        me.publishInitialState();
     },
 
     /**
-    Notifying parent ViewModel about state changes
+    Notifying both own and parent ViewModels about state changes
     */
     publishState: function (property, value) {
         var me = this,
@@ -33,33 +33,18 @@ Ext.define('Ext.ux.mixin.Bindable', {
     },
 
     /**
-    Getting published state
+    Publish initial state
     */
-    getInitialPublishedState: function () {
+    publishInitialState: function () {
         var me = this,
             state = me.publishedState || (me.publishedState = {}),
-            publishes = me.getPublishes();
+            publishes = me.getPublishes(),
+            name;
 
         for (name in publishes) {
             if (state[name] === undefined) {
-                state[name] = me[name];
+                me.publishState(name, me[name]);
             }
-        }
-
-        return state;
-    },
-
-    /**
-    Applying published state to own ViewModel
-    */
-    applyInitialPublishedState: function () {
-        var me = this,
-            vm = me.lookupViewModel(),
-            state;
-
-        if (vm && vm.getView() == me) {
-            state = me.getInitialPublishedState();
-            vm.set(state);
         }
     }
 }, function () {
