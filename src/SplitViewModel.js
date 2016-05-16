@@ -1,5 +1,5 @@
 ﻿/**
-An override to separate ViewModel data by ViewModel instances
+An override to split ViewModels data by their instances
 */
 Ext.define('Ext.ux.app.SplitViewModel', {
     override: 'Ext.app.ViewModel',
@@ -28,7 +28,7 @@ Ext.define('Ext.ux.app.SplitViewModel', {
 
     nameDelimiter: '|',
     expressionRe: /^(?:\{[!]?(?:(\d+)|([a-z_][\w\-\.|]*))\})$/i,
-    uniqueNameRe: /-\d+$/, 
+    uniqueNameRe: /-\d+$/,
 
     privates: {
         applyData: function (newData, data) {
@@ -62,7 +62,7 @@ Ext.define('Ext.ux.app.SplitViewModel', {
     },
 
     linkTo: function (key, reference) {
-        key = this.getPrefixed(key);
+        key = this.getPrefixedPath(key);
         return this.callParent([key, reference]);
     },
 
@@ -73,7 +73,7 @@ Ext.define('Ext.ux.app.SplitViewModel', {
 
     set: function (path, value) {
         if (Ext.isString(path)) {
-            path = this.getPrefixed(path);
+            path = this.getPrefixedPath(path);
         }
         else if (Ext.isObject(path)) {
             path = this.getPrefixedData(path);
@@ -97,7 +97,7 @@ Ext.define('Ext.ux.app.SplitViewModel', {
     },
 
     /**
-    Apply prefix to property names
+    Apply a prefix to property names
     */
     getPrefixedData: function (data) {
         var name, newName, value,
@@ -109,7 +109,7 @@ Ext.define('Ext.ux.app.SplitViewModel', {
 
         for (name in data) {
             value = data[name];
-            newName = this.getPrefixed(name);
+            newName = this.getPrefixedPath(name);
             result[newName] = value;
         }
 
@@ -117,16 +117,7 @@ Ext.define('Ext.ux.app.SplitViewModel', {
     },
 
     /**
-    Add prefix to a string
-    */
-    getPrefixed: function (name) {
-        var prefix = this.getPrefix();
-        var result = name.indexOf(this.nameDelimiter) != -1 ? name : prefix + name;
-        return result;
-    },
-
-    /**
-    Get descriptor with a correct prefix
+    Get a descriptor with a prefix
     */
     getPrefixedDescriptor: function (descriptor) {
         var descriptorParts = this.expressionRe.exec(descriptor);
@@ -142,7 +133,14 @@ Ext.define('Ext.ux.app.SplitViewModel', {
     },
 
     /**
-    Get path with a correct prefix
+    Get a path with a correct prefix
+
+    Examples:
+
+        foo.bar -> viewmodel-123|foo.bar
+        viewmodel|foo.bar -> viewmodel-123|foo.bar
+        viewmodel-123|foo.bar -> viewmodel-123|foo.bar (no change)
+
     */
     getPrefixedPath: function (path) {
         var nameDelimiterPos = path.lastIndexOf(this.nameDelimiter),
@@ -165,13 +163,13 @@ Ext.define('Ext.ux.app.SplitViewModel', {
                     path = vmUniqueName + path.substring(nameDelimiterPos);
                 }
                 else {
-                    Ext.log({ level: 'warn' }, 'Cannot find a ViewModel instance by specifed name/type: ' + name);
+                    Ext.log({ level: 'warn' }, 'Cannot find a ViewModel instance by a specifed name/type: ' + name);
                 }
             }
         }
         else {
             // bind to this ViewModel: foo.bar -> viewmodel-123|foo.bar
-            path = this.getPrefixed(path);            
+            path = this.getPrefix() + path;
         }
 
         return path;
@@ -183,7 +181,8 @@ Ext.define('Ext.ux.app.SplitViewModel', {
     @param {Boolean} skipThis Pass true to ignore this instance
     */
     findViewModelByName: function (name, skipThis) {
-        var vm = skipThis ? this.getParent() : this;
+        var result,
+            vm = skipThis ? this.getParent() : this;
 
         while (vm) {
             if (vm.getName() == name) {
