@@ -1,10 +1,10 @@
 ﻿/* global Ext */
 
 /**
- * An override to notify parent ViewModel about current component's published properties changes
- * and to make own ViewModel contain current component's published properties values.
+ * This override allows binding to the component's own properties. 
+ * These properties should be declared in the 'publishes' config.
  */
-Ext.define('Ext.ux.mixin.Bindable', {
+Ext.define('Ext.vmx.mixin.Bindable', {
     initBindable: function () {
         var me = this;
         Ext.mixin.Bindable.prototype.initBindable.apply(me, arguments);
@@ -12,7 +12,7 @@ Ext.define('Ext.ux.mixin.Bindable', {
     },
 
     /**
-    Notifying both own and parent ViewModels about state changes
+    Notifying both own and parent ViewModels about the state changes
     */
     publishState: function (property, value) {
         var me = this,
@@ -33,7 +33,7 @@ Ext.define('Ext.ux.mixin.Bindable', {
     },
 
     /**
-    Publish initial state
+    Publish the initial state
     */
     publishInitialState: function () {
         var me = this,
@@ -49,8 +49,8 @@ Ext.define('Ext.ux.mixin.Bindable', {
     }
 }, function () {
     Ext.Array.each([Ext.Component, Ext.Widget], function (Class) {
-        Class.prototype.initBindable = Ext.ux.mixin.Bindable.prototype.initBindable;
-        Class.prototype.publishState = Ext.ux.mixin.Bindable.prototype.publishState;
-        Class.mixin([Ext.ux.mixin.Bindable]);
+        Class.prototype.initBindable = Ext.vmx.mixin.Bindable.prototype.initBindable;
+        Class.prototype.publishState = Ext.vmx.mixin.Bindable.prototype.publishState;
+        Class.mixin([Ext.vmx.mixin.Bindable]);
     });
 });

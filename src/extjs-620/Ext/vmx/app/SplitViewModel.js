@@ -1,8 +1,13 @@
-﻿/**
-An override to split ViewModels data by their instances
+/* global Ext */
+
+/**
+* This override encapsulates the ViewModel of a component.
+* This is achieved by giving unique names to the properties of the ViewModel.
 */
-Ext.define('Ext.ux.app.SplitViewModel', {
+Ext.define('Ext.vmx.app.SplitViewModel', {
     override: 'Ext.app.ViewModel',
+
+    requires: ['Ext.vmx.Template'],
 
     config: {
         /**
@@ -14,7 +19,7 @@ Ext.define('Ext.ux.app.SplitViewModel', {
         /**
         @cfg {String}
         @private
-        name + sequential identifer
+        Identifier (name + sequential identifier)
         */
         uniqueName: undefined,
 
@@ -27,7 +32,7 @@ Ext.define('Ext.ux.app.SplitViewModel', {
     },
 
     nameDelimiter: '|',
-    expressionRe: /^(?:\{[!]?(?:(\d+)|([a-z_][\w\-\.|]*))\})$/i,
+    expressionRe: /^(?:\{(?:(\d+)|([a-z_][\w\-\.|]*))\})$/i,
     uniqueNameRe: /-\d+$/,
 
     privates: {
@@ -81,23 +86,34 @@ Ext.define('Ext.ux.app.SplitViewModel', {
         this.callParent([path, value]);
     },
 
+	/**
+	* The name is either a specified name 
+	* or a type of the ViewModel 
+	* or just 'viewmodel' (for anonymous ViewModels).
+	*/
     applyName: function (name) {
         name = name || this.type || 'viewmodel';
         return name;
+    },	
+
+	/**
+	* Unique name is based on the Ext.id generator
+	*/
+    applyUniqueName: function (uniqueName) {
+        uniqueName = uniqueName || Ext.id(null, this.getName() + '-');
+        return uniqueName;
     },
 
-    applyUniqueName: function (id) {
-        id = id || Ext.id(null, this.getName() + '-');
-        return id;
-    },
-
+	/**
+	* Prefix is the unique name with the delimiter
+	*/
     applyPrefix: function (prefix) {
         prefix = prefix || this.getUniqueName() + this.nameDelimiter;
         return prefix;
     },
 
     /**
-    Apply a prefix to property names
+    Get the data object with the keys prefixed
     */
     getPrefixedData: function (data) {
         var name, newName, value,
@@ -117,7 +133,7 @@ Ext.define('Ext.ux.app.SplitViewModel', {
     },
 
     /**
-    Get a descriptor with a prefix
+    Get the descriptor with a unique prefix
     */
     getPrefixedDescriptor: function (descriptor) {
         var descriptorParts = this.expressionRe.exec(descriptor);
@@ -133,7 +149,7 @@ Ext.define('Ext.ux.app.SplitViewModel', {
     },
 
     /**
-    Get a path with a correct prefix
+    Get the path with a correct prefix
 
     Examples:
 
@@ -151,24 +167,26 @@ Ext.define('Ext.ux.app.SplitViewModel', {
             vm;
 
         if (hasName) {
-            // bind to a ViewModel by name: viewmodel|foo.bar
+            // The descriptor contains a name of a ViewModel: viewmodel|foo.bar
+			// We want to know if the name is unique.
             name = path.substring(0, nameDelimiterPos + this.nameDelimiter.length - 1);
             isUnique = this.uniqueNameRe.test(name);
 
             if (!isUnique) {
-                // replace name by uniqueName: viewmodel-123|foo.bar
+                // replace the name with a unique name: viewmodel-123|foo.bar
                 vm = this.findViewModelByName(name);
                 if (vm) {
                     vmUniqueName = vm.getUniqueName();
                     path = vmUniqueName + path.substring(nameDelimiterPos);
                 }
                 else {
-                    Ext.log({ level: 'warn' }, 'Cannot find a ViewModel instance by a specifed name/type: ' + name);
+                    Ext.log({ level: 'warn' }, 'Cannot find a ViewModel by the specifed name or type: ' + name);
                 }
             }
         }
         else {
-            // bind to this ViewModel: foo.bar -> viewmodel-123|foo.bar
+			// The descriptor doesn't contain a name of a ViewModel.
+            // So we are binding to this ViewModel: foo.bar -> viewmodel-123|foo.bar
             path = this.getPrefix() + path;
         }
 
@@ -176,9 +194,9 @@ Ext.define('Ext.ux.app.SplitViewModel', {
     },
 
     /**
-    Find a ViewModel by name up by hierarchy
+    Find a ViewModel by the name up the hierarchy
     @param {String} name ViewModel's name
-    @param {Boolean} skipThis Pass true to ignore this instance
+    @param {Boolean} skipThis true to ignore this instance
     */
     findViewModelByName: function (name, skipThis) {
         var result,
