@@ -6,9 +6,7 @@
 */
 Ext.define('Ext.vmx.app.SplitViewModel', {
     override: 'Ext.app.ViewModel',
-	
-    requires: ['Ext.vmx.app.bind.Template'],
-	
+
     config: {
         /**
         @cfg {String}
@@ -26,14 +24,12 @@ Ext.define('Ext.vmx.app.SplitViewModel', {
         /**
         @cfg {String}
         @private
-        uniqueName + nameDelimiter
+        uniqueName + '-'
         */
         prefix: undefined
     },
 
-    nameDelimiter: '|',
-    expressionRe: /^(?:\{[!]?(?:(\d+)|([a-z_][\w\-\.|]*))\})$/i,
-    uniqueNameRe: /-\d+$/,
+    uniqueNameRe: /-id-\d+/,
 
     privates: {
         applyData: function (newData, data) {
@@ -59,13 +55,6 @@ Ext.define('Ext.vmx.app.SplitViewModel', {
         }
     },
 
-    bind: function (descriptor, callback, scope, options) {
-        if (Ext.isString(descriptor)) {
-            descriptor = this.getPrefixedDescriptor(descriptor);
-        }
-        return this.callParent([descriptor, callback, scope, options]);
-    },
-
     linkTo: function (key, reference) {
         key = this.getPrefixedPath(key);
         return this.callParent([key, reference]);
@@ -86,29 +75,29 @@ Ext.define('Ext.vmx.app.SplitViewModel', {
         this.callParent([path, value]);
     },
 
-	/**
-	* The name is either a specified name 
-	* or a type of the ViewModel 
-	* or just 'viewmodel' (for anonymous ViewModels).
-	*/
+    /**
+    * The name is either a specified name 
+    * or a type of the ViewModel 
+    * or just 'viewmodel' (for anonymous ViewModels).
+    */
     applyName: function (name) {
         name = name || this.type || 'viewmodel';
         return name;
-    },	
+    },
 
-	/**
-	* Unique name is based on the Ext.id generator
-	*/
+    /**
+    * Unique name is based on the Ext.id generator
+    */
     applyUniqueName: function (uniqueName) {
-        uniqueName = uniqueName || Ext.id(null, this.getName() + '-');
+        uniqueName = uniqueName || Ext.id(null, this.getName() + '-id-');
         return uniqueName;
     },
 
-	/**
-	* Prefix is the unique name with the delimiter
-	*/
+    /**
+    * Prefix is the unique name with the delimiter
+    */
     applyPrefix: function (prefix) {
-        prefix = prefix || this.getUniqueName() + this.nameDelimiter;
+        prefix = prefix || this.getUniqueName() + '-';
         return prefix;
     },
 
@@ -117,11 +106,13 @@ Ext.define('Ext.vmx.app.SplitViewModel', {
     */
     getPrefixedData: function (data) {
         var name, newName, value,
-            result = {};
+            result;
 
         if (!data) {
             return null;
         }
+
+        result = {};
 
         for (name in data) {
             value = data[name];
@@ -133,61 +124,58 @@ Ext.define('Ext.vmx.app.SplitViewModel', {
     },
 
     /**
-    Get the descriptor with a unique prefix
-    */
-    getPrefixedDescriptor: function (descriptor) {
-        var descriptorParts = this.expressionRe.exec(descriptor);
-
-        if (!descriptorParts) {
-            return descriptor;
-        }
-
-        var path = descriptorParts[2]; // '{foo}' -> 'foo'
-        descriptor = descriptor.replace(path, this.getPrefixedPath(path));
-
-        return descriptor;
-    },
-
-    /**
     Get the path with a correct prefix
 
     Examples:
 
-        foo.bar -> viewmodel-123|foo.bar
-        viewmodel|foo.bar -> viewmodel-123|foo.bar
-        viewmodel-123|foo.bar -> viewmodel-123|foo.bar (no change)
+        foo.bar -> myviewmodel-id-123-foo.bar
+        myviewmodel.foo.bar -> myviewmodel-id-123-foo.bar
+        myviewmodel-id-123-foo.bar -> myviewmodel-id-123-foo.bar (no change)
 
     */
     getPrefixedPath: function (path) {
-        var nameDelimiterPos = path.lastIndexOf(this.nameDelimiter),
-            hasName = nameDelimiterPos != -1,
+        var parts,
+            maybeHasViewModelName,
             name,
-            isUnique,
-            vmUniqueName,
-            vm;
+            vm,
+            isNegative;
 
-        if (hasName) {
-            // The descriptor contains a name of a ViewModel: viewmodel|foo.bar
-			// We want to know if the name is unique.
-            name = path.substring(0, nameDelimiterPos + this.nameDelimiter.length - 1);
-            isUnique = this.uniqueNameRe.test(name);
+        // If there is already a unique name in the path
+        if (this.uniqueNameRe.test(path)) {
+            return path;
+        }
 
-            if (!isUnique) {
-                // replace the name with a unique name: viewmodel-123|foo.bar
-                vm = this.findViewModelByName(name);
-                if (vm) {
-                    vmUniqueName = vm.getUniqueName();
-                    path = vmUniqueName + path.substring(nameDelimiterPos);
-                }
-                else {
-                    Ext.log({ level: 'warn' }, 'Cannot find a ViewModel by the specifed name or type: ' + name);
-                }
+        isNegative = path.indexOf('!') == 0;
+        if (isNegative) {
+            // '!foo.bar' -> 'foo.bar'
+            path = path.substring(1);
+        }
+
+        // The descriptor may contain a name of a ViewModel: myviewmodel.foo.bar
+        maybeHasViewModelName = path.indexOf('.') > -1;
+        if (maybeHasViewModelName) {
+            parts = path.split('.');
+            name = parts[0];
+
+            // Searching for it
+            vm = this.findViewModelByName(name);
+            if (vm) {
+                // Found. Binding to the specified ViewModel
+                path = vm.getPrefix() + parts.slice(1).join('.');
+            }
+            else {
+                // Not found. Binding to this ViewModel
+                path = this.getPrefix() + path;
             }
         }
         else {
-			// The descriptor doesn't contain a name of a ViewModel.
-            // So we are binding to this ViewModel: foo.bar -> viewmodel-123|foo.bar
+            // The descriptor doesn't contain the name of a ViewModel.
+            // Binding to this ViewModel
             path = this.getPrefix() + path;
+        }
+
+        if (isNegative) {
+            path = '!' + path;
         }
 
         return path;
