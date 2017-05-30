@@ -24,12 +24,12 @@ Ext.define('Ext.vmx.app.SplitViewModel', {
         /**
         @cfg {String}
         @private
-        uniqueName + '-'
+        uniqueName + '_'
         */
         prefix: undefined
     },
 
-    uniqueNameRe: /-id-\d+/,
+    uniqueNameRe: /_id_\d+/,
 
     privates: {
         applyData: function (newData, data) {
@@ -89,7 +89,7 @@ Ext.define('Ext.vmx.app.SplitViewModel', {
     * Unique name is based on the Ext.id generator
     */
     applyUniqueName: function (uniqueName) {
-        uniqueName = uniqueName || Ext.id(null, this.getName() + '-id-');
+        uniqueName = uniqueName || Ext.id(null, this.getName() + '_id_');
         return uniqueName;
     },
 
@@ -97,7 +97,7 @@ Ext.define('Ext.vmx.app.SplitViewModel', {
     * Prefix is the unique name with the delimiter
     */
     applyPrefix: function (prefix) {
-        prefix = prefix || this.getUniqueName() + '-';
+        prefix = prefix || this.getUniqueName() + '_';
         return prefix;
     },
 
@@ -128,9 +128,9 @@ Ext.define('Ext.vmx.app.SplitViewModel', {
 
     Examples:
 
-        foo.bar -> myviewmodel-id-123-foo.bar
-        myviewmodel.foo.bar -> myviewmodel-id-123-foo.bar
-        myviewmodel-id-123-foo.bar -> myviewmodel-id-123-foo.bar (no change)
+        foo.bar -> myviewmodel_id_123_foo.bar
+        myviewmodel.foo.bar -> myviewmodel_id_123_foo.bar
+        myviewmodel_id_123_foo.bar -> myviewmodel_id_123_foo.bar (no change)
 
     */
     getPrefixedPath: function (path) {
